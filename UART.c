@@ -107,6 +107,10 @@ uint8_t USART_Read (USART_TypeDef * USARTx) {
 	// Reading USART_DR automatically clears the RXNE flag 
 }
 
+uint32_t hasCharacter(USART_TypeDef * USARTx){
+	return USARTx->ISR & USART_ISR_RXNE;
+}
+
 void USART_Write(USART_TypeDef * USARTx, uint8_t *buffer, uint32_t nBytes) {
 	int i;
 	// TXE is cleared by a write to the USART_DR register.

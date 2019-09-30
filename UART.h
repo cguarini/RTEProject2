@@ -18,5 +18,6 @@ void putChar(uint8_t c);
 void putString(char * str);
 char getChar(void);
 char * getString(void);
+uint32_t hasCharacter(USART_TypeDef * USARTx);
 
 #endif /* __STM32L476G_DISCOVERY_UART_H */
