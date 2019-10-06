@@ -43,11 +43,8 @@ typedef enum
 
 
 
-void servo1_recipe_check(void);
-void waitServo(int servo, int wait_arg);
-void loop_Servo(int servo, int loop_arg, int Recipe_index);
-void End_loop_func(int servo,int Recipe_index );
-int getWait();
+void executeRecipes(void);
+int getWait(int servo);
 
 
 #endif /* RECIPENEW_H */

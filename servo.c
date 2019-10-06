@@ -6,10 +6,23 @@
 
 #define POSITION_FACTOR (2)
 
-int servoState[2] = {0,0};
+int servoState[2] = {0,0};//1 for recipe running, 0 for paused
 int servoPosition[2] = {0,0};
 
+int getServoState(int servo){
+	//default servo to servo 1 if out of bounds
+	if(servo > 1 || servo < 0){
+		servo = 0;
+	}
+	
+	return servoState[servo];
+}
 
+/*
+*Set the given servo to the given position
+*@param servo, servo to move
+*@param position, position to move the servo to (0-5)
+*/
 void moveServo(int servo, int position){
   
   //Keep the position in bounds (0 to 5)

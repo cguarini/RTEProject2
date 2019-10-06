@@ -42,7 +42,6 @@ int main(void){
   printWelcome();
   printPrompt();
   
-  int wait = getWait();
   
 	//Main program loop, should always repeat
   while(1){
@@ -75,14 +74,7 @@ int main(void){
     
     if(getTIM3_TIF()){
       resetTIM3_TIF();
-      
-      wait--;
-      if(wait <= 0){
-        servo1_recipe_check();
-        wait = getWait();
-      }
-
-      
+			executeRecipes();
     }
    
   }

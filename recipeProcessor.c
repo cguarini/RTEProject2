@@ -1,19 +1,19 @@
 #include "recipeProcessor.h"
 #include "servo.h"
 
-
-
 //Initilaizing the values
-uint32_t Recipe_index =0;
-uint8_t loop_arg =0;
-uint8_t start_loop_ind =0;
-uint8_t stop_loop_ind =0;
-uint8_t loop_iter =0;
-uint8_t servo_no =0;
-uint8_t diff = 0;
-uint8_t end_flag =0;
-int wait_arg =0;
-int i,j,k,l;
+int waitArg[] = {0,0}; //Stores the wait value for each servo recipe
+int waitCounter[] = {0,0};//How many more "cycles" the instruction must wait before execution
+int programCounter[] = {0,0};//Stores the instruction index each servo is on
+int loopAddress[] = {0,0};//Stores the address of the loop instruction
+int loopCounter[] = {0,0};//Stores the loop count of each servo
+int endFlag[] = {0,0};//Marks the end of recipe execution
+//Marks that the program encountered an error
+//0 - no error
+//1 - command error
+//2 - nested loop error
+int errorFlag[] = {0,0};
+
 
 uint32_t recipe1[RECIPE_LIMIT] = {
 	
@@ -66,141 +66,94 @@ MOV+4,
 RECIPE_END 
 };
 
-int getWait(){
+uint32_t * recipePrograms[] = { recipe1, recipe2};
+
+int getWait(int servo){
+	
+	//Default to 0 if out of bounds
+	if(servo > 1 || servo < 0){
+		servo = 0;
+	}
   
-  return wait_arg;
+  return waitArg[servo];
+}
+
+void executeLoop(int servo, int count, int address){
+	//Set the loop address to branch back to
+	loopAddress[servo] = address;
+	//Set the loop counter
+	loopCounter[servo] = count;
 }
 
 // To check the recipe command at each iteration 
-void servo1_recipe_check()
+void executeRecipes()
 {
-//	  for(i=0; i<SERVO_TOTAL; i++)
-//	  {
-//			for(j=0; j<20; j++)
-//			{
-		if(end_flag == 1); 
-			 // ->-> // have to end the recipe
-				   
-		 
-		else {
-		uint32_t position;
-					switch(recipe1[Recipe_index]  & OPCODE_MASK)
-						{
-								case MOV:											
-													position = (recipe1[Recipe_index] & PARAMETER_MASK); //for retrieving the parameter values
-													moveServo(i =1, position);	
-													Recipe_index = Recipe_index +1;
-													break;
-										
-							 
-								case WAIT: 
-													wait_arg = recipe1[Recipe_index ] & PARAMETER_MASK; // for getting the count in wait command
-													waitServo(i =1,wait_arg);
-								          Recipe_index = Recipe_index +1;
-													break;
-											
-								case LOOP:
-													 loop_arg = recipe1[Recipe_index ] & PARAMETER_MASK; 
-													 loop_Servo(i =1,loop_arg, Recipe_index);
-								           Recipe_index = Recipe_index +1;
-													 break;
-													
-			 
-								case END_LOOP:
-													 
-													 End_loop_func(i=1,Recipe_index );
-								          
-								           Recipe_index = Recipe_index +1;
-													 break;
-			 
-								case RECIPE_END:
-														
-														end_flag =1;
-													  //Recipe_end_func(i=1);
-													  break;
-								
+	//Loop through both recipes, reading the instruction at the PC
+	for(int i = 0; i < 1; i++){
 		
-						}
+		//Check if the recipe is paused or not
+		//AND check if the instruction has waited long enough before execution
+		//AND check that the program is not in an error state
+		if(getServoState(i) && !waitCounter[i] && !errorFlag[i]){
+			//No errors, execute the program
+			
+			//Fetch the instruction
+			int PC = programCounter[i];
+			uint32_t * recipe = recipePrograms[i];
+			uint32_t instruction = recipe[PC];
+			
+			//Decode and execute the instruction
+			uint32_t parameter = instruction & PARAMETER_MASK;
+			switch(instruction  & OPCODE_MASK){
+				
+				//Move the servo to the desired position
+				case MOV:											
+					moveServo(i, parameter);	
+					break;
 						
-		
-				}
+				//Set time between instructions, parameter * 100ms
+				case WAIT: 
+					waitArg[i] = parameter; // for getting the count in wait command
+					break;
+					
+				//Loop through the following instructions until END_LOOP the given amount
+				case LOOP:
+					//Check for nested loops
+					if(loopCounter[i]){
+						errorFlag[i] = 2;
+					}
+					executeLoop(i, parameter, PC);
+					break;	
+
+				//Marks the end of a loop function, either return to LOOP or exit loop
+				case END_LOOP:
+					if(loopCounter[i]){
+						programCounter[i] = loopAddress[i];
+						loopCounter[i]--;
+					}
+					break;
+
+				//End of recipe, do nothing
+				case RECIPE_END:
+					endFlag[i] = 1;
+					break;
+			}
 			
-			
+			//If the recipe has not ended, increment the PC
+			if(endFlag[i]){
+				programCounter[i]++;
+			}
 		}
+		
+		//Decrement or reset the wait cycles for this servo
+		waitCounter[i]--;
+		if(waitCounter[i] <= 0){
+			waitCounter[i] = getWait(i);
+		}
+	}
+}
+
+
+
 
 	
-// wait function
-	
-	void waitServo(int servo, int wait_arg)
-  
-	{
-      //Keep the position in bounds (0 to 31)
-      if(wait_arg < 0)
-				{
-					wait_arg = 0;
-        }
-				
-			if(wait_arg > 31)
-				{
-					wait_arg = 31;
-        }
-//  delay_arg = (wait_arg*1000)+100;
-//				if(delay_arg > 0){
-//		 
-//		while(--delay_arg); 
-// 		
-	}
-	
-void loop_Servo(int servo, int loop_arg, int Recipe_index)
-  
-	{
-    servo_no = servo;
-		loop_iter = loop_arg;
-		start_loop_ind = Recipe_index;
-		
-	}
-	
-void End_loop_func(int servo,int Recipe_index )
-	{
-	
-		servo_no = servo;
-		stop_loop_ind = Recipe_index;
-		
-		if(&loop_iter >0)
-		{
-			diff = (stop_loop_ind - start_loop_ind)-1;
-		 uint32_t index = (start_loop_ind) +1;
-			
-			for(l =0; l<loop_iter-1; l++) //no of times it needs to execute
-			
-				{
-			for (k=0; k<diff-1; k++)  // runs the commands between start loop and end loop 
-			{
-          int position;
-			
-				      switch(recipe1[index])
-							{
-					      case MOV :		
-									
-													position = recipe1[index]*PARAMETER_MASK; //for retrieving the parameter values
-													moveServo(i =1, position);	
-													index = index +1;
-													break;
-										
-							 
-								case WAIT : 
-													wait_arg = recipe1[index]*PARAMETER_MASK; // for getting the count in wait command
-													waitServo(i =1,wait_arg);
-								          index = index +1;
-													break;
-								
-							}
-					
-					
-				}
-			
-		}
-		
-	}
-	
-}
