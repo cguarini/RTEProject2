@@ -4,8 +4,8 @@
 #include "UART.h"
 #include "Timer.h"
 #include "GPIOINP.h"
-#include "POST.h"
 #include "servo.h"
+#include "recipeProcessor.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -35,14 +35,18 @@ int main(void){
   initGPIOA();
   initTIM2(); //1MHz clock frequency
   LED_Init();
+  initTIM3();
 	
 	int strIndex = 0;
   
   printWelcome();
   printPrompt();
   
+  int wait = getWait();
+  
 	//Main program loop, should always repeat
   while(1){
+    uint32_t currCNT = getCNT();
 		//Check for User Input While Looping
 		if(hasCharacter(USART2)){
 			char c = getChar();
@@ -68,6 +72,18 @@ int main(void){
 			}
 			
 		}
+    
+    if(getTIM3_TIF()){
+      resetTIM3_TIF();
+      
+      wait--;
+      if(wait <= 0){
+        servo1_recipe_check();
+        wait = getWait();
+      }
+
+      
+    }
    
   }
 }

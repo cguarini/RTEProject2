@@ -5,6 +5,16 @@
 #include <stdio.h>
 char buf[100];
 
+int TIM3_TIF = 0;
+
+int getTIM3_TIF(){
+  return TIM3_TIF;
+}
+
+void resetTIM3_TIF(){
+  TIM3_TIF = 0;
+}
+
 void setDuty(int channel, float duty){
 	
 	//Safety, make sure we don't set the duty cycle too high
@@ -72,6 +82,41 @@ void initTIM2(){
  
 }
 
+void initTIM3(){
+    //TODO Enable TIM2 Clock
+    RCC->APB1ENR1 |= (RCC_APB1ENR1_TIM3EN);
+      
+    //Disable Timer
+    TIM3->CCER &= (~TIM_CCER_CC1E);
+  
+    //Load Prescaler
+    TIM3->PSC = 65535;
+    //Set PWM Period
+    TIM3->ARR = 123;
+
+    TIM3->RCR = 0;
+    TIM3->SR &= (~TIM_SR_TIF);
+  
+    TIM3->CR1 |= TIM_CR1_ARPE;
+    TIM3->DIER |= TIM_DIER_TIE;
+    TIM3->DIER |= TIM_DIER_UIE;
+    //Generate event
+    TIM3->EGR |= TIM_EGR_UG;
+  
+    NVIC_EnableIRQ(TIM3_IRQn);
+    
+        
+    TIM3->CCMR1 |= TIM_CCMR1_OC1PE;  
+    //enable timer
+    TIM3->CCER |= (TIM_CCER_CC1E);
+    TIM3->CCER |= (TIM_CCER_CC2E);
+
+    
+    TIM3->CR1 |= TIM_CR1_CEN;
+ 
+}
+
+
 uint32_t getCCR1(){
     return TIM2->CCR1;
 }
@@ -81,9 +126,7 @@ uint32_t getCNT(){
     return TIM2->CNT;
 }
 
-
-
-void TIM2_IRQHandler(void){
-    sprintf(buf, "%d\n\r", getCNT());
-    putString(buf);
+void TIM3_IRQHandler(void){
+  TIM3_TIF = 1;
+  TIM3->SR &= (~TIM_SR_UIF);
 }
