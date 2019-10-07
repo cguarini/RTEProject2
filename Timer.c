@@ -3,6 +3,9 @@
 
 #include <string.h>
 #include <stdio.h>
+
+#define MAX_POS (10.0)
+#define MIN_POS (2.0)
 char buf[100];
 
 int TIM3_TIF = 0;
@@ -18,19 +21,21 @@ void resetTIM3_TIF(){
 void setDuty(int channel, float duty){
 	
 	//Safety, make sure we don't set the duty cycle too high
-	if( duty < 0.0){
-		duty = 0.0;
+	if( duty < 0){
+		duty = 0;
 	}
-	else if( duty > 10.0){
-		duty = 10.0;
+	else if( duty > 5){
+		duty = 5;
 	}
 	
+  float dutyCycle = (((MAX_POS - MIN_POS) / 5.0) * (duty)) + MIN_POS;
+  
 	if(channel == 0){
 		//set duty cycle
-		TIM2->CCR1 = 20000 * (duty / 100.0);
+		TIM2->CCR1 = 20000 * (dutyCycle / 100.0);
 	}
   if(channel == 1){
-    TIM2->CCR2 = 20000 * (duty / 100.0);
+    TIM2->CCR2 = 20000 * (dutyCycle / 100.0);
   }
 }
 

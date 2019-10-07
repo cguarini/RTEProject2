@@ -10,6 +10,7 @@
 //Declaring the opcode values (bits 6 to 8)
 #define MOV 0x20
 #define WAIT 0x40
+#define DELAY 0x60
 #define LOOP 0x80
 #define END_LOOP 0xA0
 #define RECIPE_END 0x00
@@ -32,6 +33,8 @@ typedef enum
 
 void executeRecipes(void);
 int getWait(int servo);
+int addToWaitCounter(int servo, int amount);
+void restartRecipe(int servo);
 
 
 #endif /* RECIPENEW_H */

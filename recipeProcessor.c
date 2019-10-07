@@ -1,5 +1,6 @@
 #include "recipeProcessor.h"
 #include "servo.h"
+#include "LED.h"
 
 //Initilaizing the values
 int waitArg[] = {0,0}; //Stores the wait value for each servo recipe
@@ -17,53 +18,24 @@ int errorFlag[] = {0,0};
 
 uint32_t recipe1[RECIPE_LIMIT] = {
 	
-WAIT+31,
+DELAY+31,
+LOOP+5,
 MOV+0,
-MOV+5,
 MOV+0,
-MOV+3,
-LOOP+0,
-MOV+1 ,
-MOV+4,
 END_LOOP,
-MOV+0,
-MOV+2,
-WAIT+0,
-MOV+3,
-WAIT+0,
-MOV+2,
-MOV+3,
-WAIT+31,
-WAIT+31,
-WAIT+31,
-MOV+4, 
 RECIPE_END 
 };
 
 
 uint32_t recipe2[RECIPE_LIMIT] = {
 	
-WAIT+31,
+DELAY+31,
+LOOP+5,
 MOV+0,
-MOV+5,
 MOV+0,
-MOV+3,
-LOOP+0,
-MOV+1 ,
-MOV+4,
 END_LOOP,
-MOV+0,
-MOV+2,
-WAIT+0,
-MOV+3,
-WAIT+0,
-MOV+2,
-MOV+3,
-WAIT+31,
-WAIT+31,
-WAIT+31,
-MOV+4, 
-RECIPE_END 
+RECIPE_END,
+MOV+0
 };
 
 uint32_t * recipePrograms[] = { recipe1, recipe2};
@@ -78,6 +50,41 @@ int getWait(int servo){
   return waitArg[servo];
 }
 
+//Reinitialize the given servo
+void restartRecipe(int servo){
+  programCounter[servo] = 0;
+  endFlag[servo] = 0;
+  errorFlag[servo] = 0;
+  waitCounter[servo] = 0;
+  waitArg[servo] = 0;
+  loopCounter[servo] = 0;
+  loopAddress[servo] = 0;
+}
+
+void setLEDs(){
+  if(errorFlag[0] == 1){
+    Red_LED_On();
+    Green_LED_Off();
+  }
+  else if(errorFlag[0] == 2){
+    Red_LED_On();
+    Green_LED_On();
+  }
+  else if(getServoState(0)){
+    Red_LED_Off();
+    Green_LED_On();
+  }
+  else{
+    Red_LED_Off();
+    Green_LED_Off();
+  }
+}
+
+int addToWaitCounter(int servo, int amount){
+  waitCounter[servo] += amount;
+  waitCounter[servo] += getWait(servo);
+}
+
 void executeLoop(int servo, int count, int address){
 	//Set the loop address to branch back to
 	loopAddress[servo] = address;
@@ -89,7 +96,7 @@ void executeLoop(int servo, int count, int address){
 void executeRecipes()
 {
 	//Loop through both recipes, reading the instruction at the PC
-	for(int i = 0; i < 1; i++){
+	for(int i = 0; i < 2; i++){
 		
 		//Check if the recipe is paused or not
 		//AND check if the instruction has waited long enough before execution
@@ -107,14 +114,24 @@ void executeRecipes()
 			switch(instruction  & OPCODE_MASK){
 				
 				//Move the servo to the desired position
-				case MOV:											
-					moveServo(i, parameter);	
+				case MOV:		
+          if(parameter > 5){
+            errorFlag[i] = 1;
+          }
+          else{
+            moveServo(i, parameter);	
+          }
 					break;
 						
 				//Set time between instructions, parameter * 100ms
-				case WAIT: 
+				case DELAY: 
 					waitArg[i] = parameter; // for getting the count in wait command
 					break;
+        
+        //Wait the given amount of time before the next instruction
+        case WAIT:
+          waitCounter[i] += parameter;
+          break;
 					
 				//Loop through the following instructions until END_LOOP the given amount
 				case LOOP:
@@ -127,9 +144,9 @@ void executeRecipes()
 
 				//Marks the end of a loop function, either return to LOOP or exit loop
 				case END_LOOP:
-					if(loopCounter[i]){
+          loopCounter[i]--;
+					if(loopCounter[i] > 0){
 						programCounter[i] = loopAddress[i];
-						loopCounter[i]--;
 					}
 					break;
 
@@ -140,17 +157,18 @@ void executeRecipes()
 			}
 			
 			//If the recipe has not ended, increment the PC
-			if(endFlag[i]){
+			if(!endFlag[i]){
 				programCounter[i]++;
 			}
 		}
 		
 		//Decrement or reset the wait cycles for this servo
 		waitCounter[i]--;
-		if(waitCounter[i] <= 0){
+		if(waitCounter[i] < 0){
 			waitCounter[i] = getWait(i);
 		}
 	}
+  setLEDs();
 }
 
 

@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include "servo.h"
 #include "Timer.h"
+#include "recipeProcessor.h"
 
-#define POSITION_FACTOR (2)
+#define POSITION_FACTOR (1)
+#define MOVEMENT_WAIT_FACTOR (2)
 
 int servoState[2] = {0,0};//1 for recipe running, 0 for paused
 int servoPosition[2] = {0,0};
@@ -33,9 +35,18 @@ void moveServo(int servo, int position){
     position = 5;
   }
   
+  //Allow time for servo to move before next instruction commences
+  if(servoPosition[servo] > position){
+    addToWaitCounter(servo, MOVEMENT_WAIT_FACTOR * (servoPosition[servo] - position));
+  }
+  else{
+    addToWaitCounter(servo, MOVEMENT_WAIT_FACTOR * (position - servoPosition[servo]));
+  }
+  
   //Set position
   servoPosition[servo] = position;
   setDuty(servo, position * POSITION_FACTOR);
+  
 }
 
 /*
@@ -94,7 +105,7 @@ void handleCommand(char * command){
     //Begin or restart recipe
     if(command[i] == 'B' || command[i] == 'b'){
       servoState[i] = 1;
-      //TODO
+      restartRecipe(i);
     }
     //Check if the servo is paused before allowing l or r commands
     if(!servoState[i]){
