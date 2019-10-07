@@ -18,19 +18,6 @@
 #define OPCODE_MASK 0xE0
 #define PARAMETER_MASK 0x1f
 
-
-
-// The position of the servos at any given time
-//typedef enum
-//{
-//SERVO_POSITION0, 
-//SERVO_POSITION1,
-//SERVO_POSITION2, 
-//SERVO_POSITION3, 
-//SERVO_POSITION4,
-//SERVO_POSITION5
-//}servo_position;
-
 //The status of the recipe
 typedef enum 
 {
