@@ -9,6 +9,8 @@
 
 //Declaring the opcode values (bits 6 to 8)
 #define MOV 0x20
+#define DM 0xE0
+//#define SWEEP 0x50
 #define WAIT 0x40
 #define DELAY 0x60
 #define LOOP 0x80
@@ -35,7 +37,7 @@ void executeRecipes(void);
 int getWait(int servo);
 int addToWaitCounter(int servo, int amount);
 void restartRecipe(int servo);
-
+void sweepServo(int servo);
 
 #endif /* RECIPENEW_H */
 

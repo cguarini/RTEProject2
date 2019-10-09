@@ -14,29 +14,59 @@ int endFlag[] = {0,0};//Marks the end of recipe execution
 //1 - command error
 //2 - nested loop error
 int errorFlag[] = {0,0};
-
+//int sweepstart;
 
 uint32_t recipe1[RECIPE_LIMIT] = {
-	
-DELAY+31,
-LOOP+5,
 MOV+0,
-MOV+0,
+WAIT+10,
+DM+2,
+WAIT+31,
+MOV+1,
+MOV+5,
+MOV+1,
+MOV+3,
+LOOP+1,
+MOV+1 ,
+MOV+4,
 END_LOOP,
+MOV+0,
+MOV+2,
+WAIT+0,
+MOV+3,
+WAIT+0,
+MOV+2,
+MOV+3,
+WAIT+31,
+WAIT+31,
+WAIT+31,
+MOV+1, 
 RECIPE_END 
 };
 
 
 uint32_t recipe2[RECIPE_LIMIT] = {
-	
-DELAY+31,
-LOOP+5,
-MOV+0,
-MOV+0,
+MOV+3,
+MOV+5,
+MOV+2,
+MOV+3,
+LOOP+3,
+MOV+1 ,
+MOV+4,
 END_LOOP,
-RECIPE_END,
-MOV+0
+MOV+0,
+MOV+2,
+WAIT+0,
+MOV+3,
+WAIT+0,
+MOV+2,
+MOV+3,
+WAIT+31,
+WAIT+31,
+WAIT+31,
+MOV+5, 
+RECIPE_END 
 };
+
 
 uint32_t * recipePrograms[] = { recipe1, recipe2};
 
@@ -122,6 +152,22 @@ void executeRecipes()
             moveServo(i, parameter);	
           }
 					break;
+          
+         //DMOV moves the servo position twice
+
+          case DM:		
+          if(parameter > 3){
+            errorFlag[i] = 1;
+          }
+          else{
+            moveServo(i, parameter * 2);
+          }
+					break;
+          
+          //function to sweep the servo
+          
+//          case SWEEP:
+//            sweepServo(i);
 						
 				//Set time between instructions, parameter * 100ms
 				case DELAY: 
